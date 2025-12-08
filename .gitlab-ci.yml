@@ -1,0 +1,311 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+      when: always
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - checkout-build
+  - unit-test
+  - code-analysis
+  - build-scan-images
+
+services:
+  - name: docker:24.0.5-dind
+    alias: docker
+    variables:
+      DOCKER_TLS_CERTDIR: "/certs"
+
+# Checkout and Build Stage
+checkout_build:
+  stage: checkout-build
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .m2/repository/
+  before_script:
+    - echo 'Checking out code for GitLab'
+    - echo 'Target branch feature/feature-1'
+    - apt-get update && apt-get install -y curl wget unzip tar gzip git jq
+  script:
+    - echo 'Installing build tool for Java'
+    - mvn clean compile -B
+  after_script:
+    - echo 'Build completed for Java'
+    - ls -la target || true
+  artifacts:
+    paths:
+      - target/
+    expire_in: 7d
+
+# Unit Test Stage
+unit_test:
+  stage: unit-test
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - checkout_build
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .m2/repository/
+  before_script:
+    - echo 'Auto-detecting language and installing prerequisites...'
+    - apt-get update && apt-get install -y curl wget unzip tar gzip git jq
+    - mkdir -p reports coverage
+  script:
+    - echo 'Running unit tests for Java with Maven'
+    - mvn -B -DskipTests=false test jacoco:report
+  after_script:
+    - echo 'Unit tests completed'
+    - echo 'Collecting artifacts...'
+    - ls -la reports || true
+    - ls -la coverage || true
+    - ls -la target/surefire-reports || true
+  artifacts:
+    paths:
+      - reports/
+      - coverage/
+      - target/surefire-reports/
+      - target/site/jacoco/
+    expire_in: 7d
+    reports:
+      junit:
+        - target/surefire-reports/*.xml
+
+# Code Analysis Jobs
+code_linter:
+  stage: code-analysis
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  before_script:
+    - export LANG_TARGET="java"
+    - mkdir -p reports
+    - apt-get update && apt-get install -y curl wget
+    - wget -O /opt/checkstyle.jar "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar"
+  script:
+    - echo 'Running Checkstyle linting for Java'
+    - java -jar /opt/checkstyle.jar -c checkstyle.xml src/ || true
+  after_script:
+    - echo 'Collecting and archiving reports'
+    - ls -la reports || true
+  artifacts:
+    paths:
+      - reports/
+    expire_in: 7d
+
+security_linter:
+  stage: code-analysis
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  before_script:
+    - echo 'Installing security linter for Java'
+    - mkdir -p security-report
+    - apt-get update && apt-get install -y openjdk-11-jdk wget unzip
+    - wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+    - unzip dependency-check-8.4.0-release.zip && export PATH=$PATH:$(pwd)/dependency-check/bin
+  script:
+    - echo 'Running security linting for Java'
+    - dependency-check --scan . --format HTML || true
+  after_script:
+    - echo 'Security linting completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - security-report/
+    expire_in: 1 week
+
+secret_scan:
+  stage: code-analysis
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  before_script:
+    - echo 'Installing dependencies for Gitleaks secret detection'
+    - apt-get update && apt-get install -y wget curl ca-certificates git
+    - echo 'Installing Gitleaks'
+    - wget -O /usr/local/bin/gitleaks https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
+    - chmod +x /usr/local/bin/gitleaks
+    - echo 'Verifying Gitleaks installation'
+    - gitleaks version
+    - mkdir -p secret-scan-report
+  script:
+    - echo 'Running Gitleaks secret detection on the entire codebase'
+    - gitleaks detect --source . --report-format json --report-path secret-scan-report/gitleaks-report.json || echo 'Secret scan completed with findings'
+  after_script:
+    - echo 'Secret detection completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - secret-scan-report/
+    expire_in: 1 week
+
+image_linter:
+  stage: code-analysis
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  before_script:
+    - echo 'Installing dependencies for Dockerfile linting'
+    - apt-get update && apt-get install -y wget curl ca-certificates findutils
+    - echo 'Installing Hadolint (Dockerfile linter)'
+    - wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64
+    - chmod +x /usr/local/bin/hadolint
+    - echo 'Verifying Hadolint installation'
+    - hadolint --version
+    - mkdir -p image-lint-report
+  script:
+    - echo 'Running Dockerfile linting using Hadolint for all Dockerfiles'
+    - find . -type f -iname 'Dockerfile' | while read dockerfile; do
+        echo "Linting $dockerfile"
+        hadolint "$dockerfile" >> image-lint-report/hadolint-report.txt || echo "Linting completed with warnings/errors for $dockerfile"
+      done
+  after_script:
+    - echo 'Image linting completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - image-lint-report/
+    expire_in: 1 week
+
+iac_scan:
+  stage: code-analysis
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  before_script:
+    - echo 'Installing dependencies for Checkov IaC scanning'
+    - apt-get update && apt-get install -y python3-pip wget curl ca-certificates
+    - echo 'Installing Checkov'
+    - pip install checkov
+    - echo 'Verifying Checkov installation'
+    - checkov --version
+    - mkdir -p iac-scan-report
+  script:
+    - echo 'Running Checkov IaC scan on the entire codebase'
+    - checkov -d . --output json --output-file-path iac-scan-report/checkov-report.json || echo 'IaC scan completed with findings'
+  after_script:
+    - echo 'IaC scanning completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - iac-scan-report/
+    expire_in: 1 week
+
+trivy_sast:
+  stage: code-analysis
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  before_script:
+    - echo 'Installing dependencies for Trivy scanning'
+    - apt-get update && apt-get install -y wget curl ca-certificates
+    - echo 'Installing Trivy (SAST, Dependency, Filesystem Scanner)'
+    - wget -qO- https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz | tar zxvf -
+    - mv trivy /usr/local/bin/
+    - chmod +x /usr/local/bin/trivy
+    - echo 'Verifying Trivy installation'
+    - trivy --version
+    - mkdir -p trivy-report
+  script:
+    - echo 'Running Trivy scans SAST, Dependency, and Filesystem'
+    - trivy fs --security-checks vuln,secret,config --format json --output trivy-report/fs-scan.json .
+    - trivy sbom --format json --output trivy-report/sbom-scan.json .
+    - trivy fs --security-checks vuln --format json --output trivy-report/sast-scan.json .
+  after_script:
+    - echo 'Trivy scanning completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - trivy-report/
+    expire_in: 1 week
+
+# Build and Scan Images Stage
+build_and_scan_image:
+  stage: build-scan-images
+  image: maven:3.9.6-eclipse-temurin-17
+  tags:
+    - mainrunner
+  needs:
+    - unit_test
+    - code_linter
+    - image_linter
+    - trivy_sast
+    - secret_scan
+    - iac_scan
+    - security_linter
+  rules:
+    - if: $CI_COMMIT_BRANCH == "feature/feature-1"
+  variables:
+    IMAGE_TAG: "$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_ID"
+  before_script:
+    - echo 'Installing Docker and Trivy prerequisites'
+    - apt-get update && apt-get install -y docker.io wget curl ca-certificates jq
+    - echo 'Installing Trivy vulnerability scanner'
+    - wget -qO- https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.tar.gz | tar zxvf -
+    - mv trivy /usr/local/bin/
+    - chmod +x /usr/local/bin/trivy
+    - echo 'Verifying Trivy installation'
+    - trivy --version
+    - mkdir -p images
+  script:
+    - echo 'Building Spring Boot application JAR'
+    - mvn clean package -DskipTests
+    - echo 'Finding Dockerfiles and extracting service names...'
+    - DOCKERFILES=$(find . -name "Dockerfile" -not -path "./.*" | grep -v "/target/" | head -20)
+    - if [ -z "$DOCKERFILES" ]; then echo 'No Dockerfiles found'; exit 1; fi
+    - echo 'Preparing report directory and image list file'
+    - IMAGE_LIST_FILE="images/images-built.txt"
+    - echo -n > "$IMAGE_LIST_FILE"
+    - for FILE in $DOCKERFILES; do
+        SERVICE_NAME=$(basename $(dirname "$FILE"))
+        if [ "$SERVICE_NAME" = "." ]; then SERVICE_NAME="springboot-ecommerce"; fi
+        IMAGE_NAME="${SERVICE_NAME}"
+        echo "Building image $IMAGE_NAME:$IMAGE_TAG from $FILE"
+        docker build -f "$FILE" -t "$IMAGE_NAME:$IMAGE_TAG" . | tee "images/build-$SERVICE_NAME.log"
+        echo "$IMAGE_NAME:$IMAGE_TAG" >> "$IMAGE_LIST_FILE"
+        echo "Performing Trivy vulnerability scan on built image $IMAGE_NAME:$IMAGE_TAG"
+        trivy image --security-checks vuln,secret,config --severity HIGH,CRITICAL --format json --output "images/trivy-scan-$SERVICE_NAME.json" "$IMAGE_NAME:$IMAGE_TAG" || echo 'Scan completed with findings'
+      done
+  after_script:
+    - echo 'Build and Trivy scan completed. Reports saved in artifacts.'
+    - echo 'Images built and scanned'
+    - cat "images/images-built.txt" || true
+  artifacts:
+    paths:
+      - images/
+    expire_in: 1 week
