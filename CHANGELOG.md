@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial Spring Boot e-commerce application structure
-- Maven build configuration
-- CI/CD pipeline with GitHub Actions
-- Code analysis and security scanning
-- Unit testing framework
+- RESTful API endpoints for product management
+- Maven build configuration with Spring Boot 3.x
+- Comprehensive unit and integration test framework
+- CI/CD pipeline configuration for automated testing and deployment
+- Code quality and security scanning integration
 
 ### Changed
 - N/A
@@ -27,13 +28,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 
 ### Security
-- Integrated security scanning in CI/CD pipeline
-- Secret scanning implementation
-- SAST (Static Application Security Testing) integration
+- N/A
 
-## [1.0.0] - 2024-01-01
+## [0.1.0] - 2024-12-08
 
 ### Added
-- Initial project setup
-- Repository structure with trunk-based workflow
-- Essential documentation files
+- Project initialization
+- Basic Spring Boot application structure
+- Maven configuration
+- Initial documentation (README, LICENSE, CONTRIBUTING)
+- Code of conduct and security policies
+
+---
+
+## Template for Future Releases
+
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- New features
+
+### Changed
+- Changes in existing functionality
+
+### Deprecated
+- Soon-to-be removed features
+
+### Removed
+- Removed features
+
+### Fixed
+- Bug fixes
+
+### Security
+- Security improvements and vulnerability fixes
