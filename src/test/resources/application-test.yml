@@ -1,38 +1,24 @@
-# Test configuration for Spring Boot E-commerce Application
+# Test Configuration for Spring Boot E-commerce Application
 
 spring:
+  # Test Database Configuration
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
     username: sa
     password: 
   
+  # JPA Configuration for Tests
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
-  
-  h2:
-    console:
-      enabled: false
-  
-  sql:
-    init:
-      mode: never
+    show-sql: false
 
-# Logging for tests
+# Logging Configuration for Tests
 logging:
   level:
     com.ecommerce: DEBUG
-    org.springframework.test: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.security: WARN
+    org.springframework.web: WARN
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-
-# Disable security for tests
-spring.autoconfigure.exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration

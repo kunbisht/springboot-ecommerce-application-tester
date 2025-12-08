@@ -6,8 +6,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Integration tests for the main application class.
- * 
- * Verifies that the Spring context loads successfully.
+ * Tests the basic application context loading.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -18,6 +17,6 @@ class EcommerceApplicationTests {
      */
     @Test
     void contextLoads() {
-        // This test will fail if the application context cannot be loaded
+        // This test will pass if the application context loads without errors
     }
 }
