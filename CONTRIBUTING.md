@@ -1,94 +1,93 @@
 # Contributing to Spring Boot E-commerce Application
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
+Thank you for your interest in contributing to our Spring Boot e-commerce application! This document provides guidelines and instructions for contributing.
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+## Getting Started
 
-## We Develop with GitHub
+### Prerequisites
+- Java 17 or higher
+- Maven 3.9+
+- Git
+- IDE of your choice (IntelliJ IDEA, Eclipse, VS Code)
 
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
+### Setting Up Development Environment
 
-## We Use [Trunk-based Development](https://trunkbaseddevelopment.com/)
+1. Fork the repository
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/your-username/springboot-ecommerce-application-tester.git
+   cd springboot-ecommerce-application-tester
+   ```
 
-Pull requests are the best way to propose changes to the codebase. We actively welcome your pull requests:
+3. Create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-1. Fork the repo and create your branch from `main`.
-2. Create a feature branch: `feature/feature-name`
-3. If you've added code that should be tested, add tests.
-4. If you've changed APIs, update the documentation.
-5. Ensure the test suite passes.
-6. Make sure your code lints.
-7. Issue that pull request!
+4. Install dependencies:
+   ```bash
+   mvn clean install
+   ```
 
-## Branch Naming Convention
+## Development Workflow
 
-- `feature/feature-name` - for new features
-- `feature/bugfix-name` - for bug fixes
-- `feature/hotfix-name` - for critical fixes
-
-## Any contributions you make will be under the MIT Software License
-
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
-
-## Report bugs using GitHub's [issues](https://github.com/kunbisht/springboot-ecommerce-application-tester/issues)
-
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/kunbisht/springboot-ecommerce-application-tester/issues/new); it's that easy!
-
-## Write bug reports with detail, background, and sample code
-
-**Great Bug Reports** tend to have:
-
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
-
-## Development Process
-
-1. Clone the repository
-2. Create a feature branch from `main`
-3. Make your changes
-4. Add or update tests as needed
-5. Run the full test suite: `mvn clean test`
-6. Run code quality checks: `mvn clean verify`
-7. Commit your changes with a descriptive message
-8. Push to your feature branch
-9. Create a Pull Request
-
-## Code Style
-
+### Code Style
 - Follow Java coding conventions
 - Use meaningful variable and method names
-- Write comprehensive tests for new functionality
-- Document public APIs
-- Keep methods small and focused
-- Use Spring Boot best practices
+- Add appropriate comments for complex logic
+- Ensure proper exception handling
 
-## Testing
-
+### Testing
 - Write unit tests for all new functionality
-- Ensure existing tests continue to pass
-- Aim for high test coverage
-- Use meaningful test names that describe what is being tested
+- Ensure all tests pass before submitting:
+  ```bash
+  mvn test
+  ```
+- Aim for high test coverage (>80%)
 
-## Pull Request Process
+### Commit Guidelines
+- Use clear, descriptive commit messages
+- Follow conventional commit format:
+  ```
+  type(scope): description
+  
+  [optional body]
+  
+  [optional footer]
+  ```
+- Types: feat, fix, docs, style, refactor, test, chore
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a build.
-2. Update the README.md with details of changes to the interface, this includes new environment variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any examples files and the README.md to the new version that this Pull Request would represent.
-4. Your Pull Request will be merged once you have the sign-off of at least one maintainer.
+### Pull Request Process
 
-## License
+1. Ensure your code follows the style guidelines
+2. Update documentation if needed
+3. Add tests for new functionality
+4. Ensure all CI checks pass
+5. Request review from maintainers
 
-By contributing, you agree that your contributions will be licensed under its MIT License.
+## CI/CD Pipeline
 
-## References
+Our project uses GitLab CI for continuous integration. The pipeline includes:
+- Code compilation and build
+- Unit and integration tests
+- Code quality analysis
+- Security scanning
+- Container image building
 
-This document was adapted from the open-source contribution guidelines for [Facebook's Draft](https://github.com/facebook/draft-js/blob/a9316a723f9e918afde44dea68b5f9f39b7d9b00/CONTRIBUTING.md)
+## Reporting Issues
+
+When reporting issues, please include:
+- Clear description of the problem
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (Java version, OS, etc.)
+- Relevant logs or error messages
+
+## Questions?
+
+If you have questions, feel free to:
+- Open an issue for discussion
+- Contact the maintainers
+- Check existing documentation
+
+Thank you for contributing!

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities. Which versions are eligible for receiving such patches depends on the CVSS v3.0 Rating:
+We actively support the following versions of the Spring Boot E-commerce Application:
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -11,86 +11,64 @@ We release patches for security vulnerabilities. Which versions are eligible for
 
 ## Reporting a Vulnerability
 
-Please report (suspected) security vulnerabilities to **[INSERT EMAIL ADDRESS]**. You will receive a response from us within 48 hours. If the issue is confirmed, we will release a patch as soon as possible depending on complexity but historically within a few days.
+We take security vulnerabilities seriously. If you discover a security vulnerability, please follow these steps:
 
-## Security Measures
+### How to Report
 
-This project implements several security measures:
+1. **Do NOT** create a public GitHub issue for security vulnerabilities
+2. Send an email to the security team with details of the vulnerability
+3. Include the following information:
+   - Description of the vulnerability
+   - Steps to reproduce the issue
+   - Potential impact
+   - Suggested fix (if available)
 
-### CI/CD Security
-- **Secret Scanning**: Automated detection of hardcoded secrets
-- **SAST (Static Application Security Testing)**: Code analysis for security vulnerabilities
-- **Dependency Scanning**: Regular checks for vulnerable dependencies
-- **Container Security**: Docker image vulnerability scanning
-- **Infrastructure as Code (IaC) Scanning**: Security analysis of deployment configurations
+### What to Expect
 
-### Application Security
+- **Acknowledgment**: We will acknowledge receipt of your vulnerability report within 48 hours
+- **Initial Assessment**: We will provide an initial assessment within 5 business days
+- **Status Updates**: We will keep you informed of our progress
+- **Resolution**: We aim to resolve critical vulnerabilities within 30 days
+
+### Security Measures
+
+Our application implements several security measures:
+
 - **Input Validation**: All user inputs are validated and sanitized
-- **Authentication & Authorization**: Secure user authentication and role-based access control
-- **HTTPS**: All communications are encrypted in transit
-- **Security Headers**: Proper HTTP security headers are implemented
-- **SQL Injection Prevention**: Use of prepared statements and parameterized queries
-- **XSS Prevention**: Output encoding and Content Security Policy
+- **Authentication**: Secure authentication mechanisms
+- **Authorization**: Role-based access control
+- **Data Protection**: Encryption of sensitive data
+- **Dependency Scanning**: Regular scanning of dependencies for known vulnerabilities
+- **Static Analysis**: Code security analysis in CI/CD pipeline
+- **Container Security**: Secure container images and runtime
 
-### Development Security
-- **Secure Coding Practices**: Following OWASP guidelines
-- **Code Reviews**: All code changes require security review
-- **Dependency Management**: Regular updates and vulnerability assessments
-- **Environment Separation**: Proper isolation between development, staging, and production
+### Security Best Practices
 
-## Security Best Practices for Contributors
+When contributing to this project:
 
-1. **Never commit secrets**: Use environment variables or secure vaults
-2. **Validate all inputs**: Assume all input is malicious
-3. **Use HTTPS**: Always use secure connections
-4. **Keep dependencies updated**: Regularly update to latest secure versions
-5. **Follow principle of least privilege**: Grant minimum necessary permissions
-6. **Sanitize outputs**: Prevent XSS and injection attacks
-7. **Log security events**: Maintain audit trails
-8. **Use secure defaults**: Configure systems securely by default
+- Never commit secrets, API keys, or passwords
+- Use parameterized queries to prevent SQL injection
+- Implement proper error handling without exposing sensitive information
+- Follow OWASP security guidelines
+- Keep dependencies up to date
 
-## Security Testing
+### Security Tools
 
-Before submitting code:
+Our CI/CD pipeline includes:
 
-1. Run security linters: `mvn clean verify`
-2. Check for known vulnerabilities: `mvn dependency-check:check`
-3. Test authentication and authorization
-4. Verify input validation
-5. Check for information disclosure
+- **SAST**: Static Application Security Testing
+- **Dependency Check**: Vulnerability scanning of dependencies
+- **Secret Scanning**: Detection of hardcoded secrets
+- **Container Scanning**: Security analysis of Docker images
+- **IaC Scanning**: Infrastructure as Code security analysis
 
-## Incident Response
+## Responsible Disclosure
 
-In case of a security incident:
+We believe in responsible disclosure and will:
 
-1. **Immediate Response** (0-1 hours)
-   - Assess the scope and impact
-   - Contain the incident
-   - Notify stakeholders
+- Work with you to understand and resolve the issue
+- Keep you informed throughout the process
+- Credit you for the discovery (if desired)
+- Coordinate public disclosure timing
 
-2. **Short-term Response** (1-24 hours)
-   - Investigate root cause
-   - Implement temporary fixes
-   - Document the incident
-
-3. **Long-term Response** (1-7 days)
-   - Implement permanent fixes
-   - Update security measures
-   - Conduct post-incident review
-
-## Security Resources
-
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Spring Security Documentation](https://spring.io/projects/spring-security)
-- [Java Security Guidelines](https://www.oracle.com/java/technologies/javase/seccodeguide.html)
-- [Maven Security Plugin](https://jeremylong.github.io/DependencyCheck/dependency-check-maven/)
-
-## Contact
-
-For security-related questions or concerns, please contact:
-- Security Team: [INSERT EMAIL]
-- Project Maintainers: [INSERT EMAIL]
-
----
-
-**Note**: This security policy is a living document and will be updated as needed to reflect the current security posture of the project.
+Thank you for helping keep our application and users safe!
