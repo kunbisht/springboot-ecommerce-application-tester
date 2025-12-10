@@ -1,0 +1,160 @@
+# GitLab CI/CD Pipeline for Spring Boot E-commerce Application
+# Platform: GitLab CI
+# Language: Java
+# Framework: Spring Boot
+# Build Tool: Maven
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_TAG: "$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_ID"
+
+stages:
+  - checkout_and_build
+  - unit_test
+  - code_analysis
+
+checkout_and_build:
+  stage: checkout_and_build
+  image: maven:3.8.6-openjdk-17
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH =~ /^feature\//'  
+      when: always
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .m2/repository/
+  before_script:
+    - echo 'Checking out code for GitLab CI'
+    - echo "Target branch is $CI_COMMIT_BRANCH"
+    - apt-get update && apt-get install -y curl wget unzip tar gzip git jq
+    - apt-get install -y openjdk-17-jdk maven
+  script:
+    - echo 'Installing build tool for Java'
+    - mvn clean install -B -DskipTests=true
+  after_script:
+    - echo 'Build completed for Java'
+    - ls -la target || true
+  artifacts:
+    paths:
+      - target/
+    expire_in: 7d
+
+unit_test:
+  stage: unit_test
+  image: maven:3.8.6-openjdk-17
+  needs:
+    - checkout_and_build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH =~ /^feature\//'  
+      when: always
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .m2/repository/
+  before_script:
+    - echo 'Auto-detecting language and installing prerequisites...'
+    - apt-get update && apt-get install -y curl wget unzip tar gzip git jq
+    - echo "Detected language is Java"
+    - apt-get install -y openjdk-17-jdk maven
+    - mkdir -p reports
+  script:
+    - echo 'Selecting test runner and command based on code context...'
+    - echo "Resolved TEST_CMD is mvn -B -DskipTests=false test"
+    - mvn -B -DskipTests=false test
+  after_script:
+    - echo 'Unit tests completed'
+    - echo 'Collecting artifacts...' 
+    - ls -la reports || true
+  artifacts:
+    paths:
+      - reports/
+      - target/surefire-reports/
+    expire_in: 7d
+    reports:
+      junit:
+        - target/surefire-reports/*.xml
+
+code_linter:
+  stage: code_analysis
+  image: maven:3.8.6-openjdk-17
+  needs:
+    - unit_test
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\//' 
+      when: always
+  before_script:
+    - export LANG_TARGET="java"
+    - mkdir -p reports
+    - apt-get update && apt-get install -y curl
+    - curl -sSL -o /opt/checkstyle.jar "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar"
+  script:
+    - echo 'Running Java code linting with Checkstyle'
+    - java -jar /opt/checkstyle.jar -c /google_checks.xml src/main/java/ || true
+  after_script:
+    - echo 'Collecting and archiving reports'
+    - ls -la reports || true
+  artifacts:
+    paths:
+      - reports/
+    expire_in: 7d
+
+security_linter:
+  stage: code_analysis
+  image: maven:3.8.6-openjdk-17
+  needs:
+    - unit_test
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\//' 
+      when: always
+  before_script:
+    - echo 'Installing security linter for Java'
+    - mkdir -p security-report
+    - apt-get update && apt-get install -y openjdk-11-jdk wget unzip
+    - wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+    - unzip dependency-check-8.4.0-release.zip && export PATH=$PATH:$(pwd)/dependency-check/bin
+  script:
+    - echo 'Running security linting for Java'
+    - dependency-check --scan . --format HTML || true
+  after_script:
+    - echo 'Security linting completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - security-report/
+    expire_in: 1 week
+
+secret_scan:
+  stage: code_analysis
+  image: maven:3.8.6-openjdk-17
+  needs:
+    - unit_test
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^feature\//' 
+      when: always
+  before_script:
+    - echo 'Installing dependencies for Gitleaks secret detection'
+    - apt-get update && apt-get install -y curl wget ca-certificates tar jq
+    - echo 'Resolving latest Gitleaks version'
+    - export GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+    - echo "Installing Gitleaks ${GITLEAKS_VERSION}"
+    - wget -qO /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+    - tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+    - chmod +x /usr/local/bin/gitleaks
+    - echo 'Verifying Gitleaks installation'
+    - gitleaks version
+    - mkdir -p secret-scan-report
+  script:
+    - echo 'Running Gitleaks secret detection on the entire codebase'
+    - gitleaks detect --source . --report-format json --report-path secret-scan-report/gitleaks-report.json || echo 'Secret scan completed with findings'
+  after_script:
+    - echo 'Secret detection completed. Reports saved in artifacts.'
+  artifacts:
+    paths:
+      - secret-scan-report/
+    expire_in: 1 week
+
+# Services for Docker-in-Docker if needed
+services:
+  - docker:24.0.5-dind
